@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.NamedEntityGraph;
 import java.math.BigDecimal;
 
 import java.time.LocalDate;
@@ -62,7 +64,7 @@ public class UserService {
     }
 
     public List<User> getAllUsers() {
-        return repository.findAll();
+        return repository.findAllWithAccount();
     }
 
     public void increaseBalance(User user) {

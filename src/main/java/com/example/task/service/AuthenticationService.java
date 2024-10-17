@@ -4,6 +4,8 @@ import com.example.task.dto.JwtAuthenticationResponse;
 import com.example.task.dto.SignInRequest;
 import com.example.task.dto.SignUpRequest;
 import com.example.task.entities.*;
+import com.example.task.repository.EmailDataRepository;
+import com.example.task.repository.PhoneDataRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +22,8 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final EmailDataRepository emailDataRepository;
+    private final PhoneDataRepository phoneDataRepository;
 
     /**
      * Регистрация пользователя
@@ -36,6 +40,7 @@ public class AuthenticationService {
 
         var account = new Account();
         account.setBalance(request.getInitialBalance());
+        account.setInitialBalance(request.getInitialBalance());
         user.setAccount(account);
 
         var phoneData = new PhoneData();
@@ -62,14 +67,28 @@ public class AuthenticationService {
      * @return токен
      */
     public JwtAuthenticationResponse signIn(SignInRequest request) {
+
+        String username = null;
+
+        var optionalEmailData = emailDataRepository.findByEmail(request.getPhoneOrEmail());
+        if (optionalEmailData.isPresent())
+            username = optionalEmailData.get().getUser().getUsername();
+
+        if (username == null) {
+            var optionalPhoneData = phoneDataRepository.findByPhone(request.getPhoneOrEmail());
+            if (optionalPhoneData.isPresent())
+                username = optionalPhoneData.get().getUser().getUsername();
+        }
+
+
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.getUsername(),
+                username,
                 request.getPassword()
         ));
 
         var user = userService
                 .userDetailsService()
-                .loadUserByUsername(request.getUsername());
+                .loadUserByUsername(username);
 
         var jwt = jwtService.generateToken(user);
         return new JwtAuthenticationResponse(jwt);
